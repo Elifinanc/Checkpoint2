@@ -101,10 +101,8 @@ GO
 DECLARE @Counter INT = 1
 WHILE(@Counter <= 12)
 BEGIN
-	INSERT INTO [Event]
-	(event_name, event_date)
-	VALUES
-	(CONCAT('Event', @Counter), CONCAT('0',@Counter, '-0',@Counter,'-2020'))
+	INSERT INTO [Event](event_name, event_date)
+	VALUES(CONCAT('Event', @Counter), CONCAT('0',@Counter, '-0',@Counter,'-2020'))
 	SET @Counter = @Counter +1
 END
 GO
@@ -112,10 +110,8 @@ GO
 DECLARE @Counter INT = 1
 WHILE(@Counter <= 4)
 BEGIN
-	INSERT INTO Agenda
-	(agenda_name)
-	VALUES
-	(CONCAT('Agenda', @Counter))
+	INSERT INTO Agenda(agenda_name)
+	VALUES (CONCAT('Agenda', @Counter))
 	SET @Counter = @Counter +1
 END
 GO
@@ -186,11 +182,30 @@ GO
 EXECUTE sp_AssociatedEachCampusAndEachAgendaToEachCursus
 GO
 
+
 DECLARE @Counter INT = 1
-WHILE(@Counter <= 16)
+WHILE(@Counter <= 10)
 BEGIN
 	INSERT INTO Expedition (expedition_startdate, expedition_enddate, FK_cursus_id)
 	VALUES (CONCAT('0',@Counter, '-0',@Counter,'-2020'), CONCAT('0',@Counter +1, '-0',@Counter +1,'-2020'), @Counter)
 	SET @Counter = @Counter +1
 END
 GO
+
+DECLARE @Counter INT = 1
+DECLARE @CounterExpeditionId INT = 1
+WHILE (@Counter <= 30)
+BEGIN
+	INSERT INTO ExpeditionQuest (FK_quest_id, FK_expedition_id)
+	VALUES (@Counter, @CounterExpeditionId)
+	SET @CounterExpeditionId= @CounterExpeditionId + 1
+	IF (@CounterExpeditionId =11)
+		BEGIN
+			SET @CounterExpeditionId = 1
+		END
+	SET @Counter= @Counter + 1
+END
+GO
+
+
+SELECT * FROM ExpeditionQuest
