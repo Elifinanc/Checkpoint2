@@ -4,6 +4,10 @@ CREATE DATABASE Checkpoint2
 GO
 
 USE Checkpoint2
+GO
+
+DROP TABLE IF EXISTS [Event]
+GO
 
 CREATE TABLE [Event](event_id INT PRIMARY KEY IDENTITY(1,1),
 				     event_name VARCHAR(60) NOT NULL,
@@ -11,16 +15,31 @@ CREATE TABLE [Event](event_id INT PRIMARY KEY IDENTITY(1,1),
 )
 GO 
 
+DROP TABLE IF EXISTS Agenda
+GO
 
 CREATE TABLE Agenda(agenda_id INT PRIMARY KEY IDENTITY(1,1),
-					FK_event_id INT NOT NULL,
-					FOREIGN KEY (FK_event_id) REFERENCES [Event](event_id)
+			 agenda_name VARCHAR(60) NOT NULL,
 )
+GO
+
+CREATE TABLE EventAgenda(eventAgenda_id INT PRIMARY KEY IDENTITY(1,1),
+						FK_event_id INT NOT NULL,
+						FOREIGN KEY (FK_event_id) REFERENCES [Event](event_id),
+						FK_agenda_id INT NOT NULL,
+						FOREIGN KEY (FK_agenda_id) REFERENCES Agenda(agenda_id)
+)
+GO
+
+DROP TABLE IF EXISTS Campus
 GO
 
 CREATE TABLE Campus(campus_id INT PRIMARY KEY IDENTITY(1,1),
                     campus_location VARCHAR(60) NOT NULL
 )
+GO
+
+DROP TABLE IF EXISTS Cursus
 GO
 
 CREATE TABLE Cursus(cursus_id INT PRIMARY KEY IDENTITY(1,1),
@@ -34,6 +53,9 @@ CREATE TABLE Cursus(cursus_id INT PRIMARY KEY IDENTITY(1,1),
 )
 GO
 
+DROP TABLE IF EXISTS Expedition
+GO
+
 CREATE TABLE Expedition(expedition_id INT PRIMARY KEY IDENTITY(1,1),
 						expedition_startdate DATETIME NOT NULL,
 						expedition_enddate DATETIME NOT NULL,
@@ -42,15 +64,27 @@ CREATE TABLE Expedition(expedition_id INT PRIMARY KEY IDENTITY(1,1),
 )
 GO
 
+DROP TABLE IF EXISTS Quest
+GO
+
 CREATE TABLE Quest(quest_id INT PRIMARY KEY IDENTITY(1,1),
 				   quest_author VARCHAR(60) NOT NULL,
 				   quest_text VARCHAR(60) NOT NULL,
-				   quest_title VARCHAR(60) NOT NULL,
-				   FK_expedition_id INT NOT NULL,
-				   FOREIGN KEY (FK_expedition_id) REFERENCES Expedition(expedition_id)
+				   quest_title VARCHAR(60) NOT NULL
 )
 GO
 
+CREATE TABLE ExpeditionQuest(expeditionQuest_id INT PRIMARY KEY IDENTITY(1,1),
+							FK_quest_id INT NOT NULL,
+							FOREIGN KEY (FK_quest_id) REFERENCES Quest(quest_id),
+							FK_expedition_id INT NOT NULL,
+				            FOREIGN KEY (FK_expedition_id) REFERENCES Expedition(expedition_id)
+)
+GO
+
+
+DROP TABLE IF EXISTS Person
+GO
 
 CREATE TABLE Person(person_id INT PRIMARY KEY IDENTITY(1,1),
                     person_name VARCHAR(60) NOT NULL,
@@ -62,4 +96,41 @@ CREATE TABLE Person(person_id INT PRIMARY KEY IDENTITY(1,1),
 					FK_subordinates_id INT NOT NULL,
 					FOREIGN KEY (FK_subordinates_id) REFERENCES Person(person_id)
 )
+GO
+
+DECLARE @Counter INT = 1
+WHILE(@Counter <= 12)
+BEGIN
+	INSERT INTO [Event]
+	(event_name, event_date)
+	VALUES
+	(CONCAT('Event', @Counter), CONCAT('0',@Counter, '-0',@Counter,'-2020'))
+	SET @Counter = @Counter +1
+END
+GO
+
+DECLARE @Counter INT = 1
+WHILE(@Counter <= 4)
+BEGIN
+	INSERT INTO Agenda
+	(agenda_name)
+	VALUES
+	(CONCAT('Agenda', @Counter))
+	SET @Counter = @Counter +1
+END
+GO
+
+DECLARE @Counter INT = 1
+DECLARE @CounterEventId INT = 1
+WHILE (@Counter <= 12)
+BEGIN
+		INSERT INTO EventAgenda(FK_event_id, FK_agenda_id)
+		VALUES (@Counter, @CounterEventId)
+		SET @CounterEventId= @CounterEventId + 1
+	    IF (@CounterEventId =5)
+			BEGIN
+				SET @CounterEventId = 1
+			END
+	SET @Counter= @Counter + 1
+END
 GO
