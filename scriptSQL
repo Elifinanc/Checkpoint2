@@ -69,7 +69,7 @@ GO
 
 CREATE TABLE Quest(quest_id INT PRIMARY KEY IDENTITY(1,1),
 				   quest_author VARCHAR(60) NOT NULL,
-				   quest_text VARCHAR(60) NOT NULL,
+				   quest_text VARCHAR(500) NOT NULL,
 				   quest_title VARCHAR(60) NOT NULL
 )
 GO
@@ -121,16 +121,48 @@ END
 GO
 
 DECLARE @Counter INT = 1
-DECLARE @CounterEventId INT = 1
+DECLARE @CounterAgendaId INT = 1
 WHILE (@Counter <= 12)
 BEGIN
-		INSERT INTO EventAgenda(FK_event_id, FK_agenda_id)
-		VALUES (@Counter, @CounterEventId)
-		SET @CounterEventId= @CounterEventId + 1
-	    IF (@CounterEventId =5)
-			BEGIN
-				SET @CounterEventId = 1
-			END
+	INSERT INTO EventAgenda(FK_event_id, FK_agenda_id)
+	VALUES (@Counter, @CounterAgendaId)
+	SET @CounterAgendaId= @CounterAgendaId + 1
+	IF (@CounterAgendaId =5)
+		BEGIN
+			SET @CounterAgendaId = 1
+		END
 	SET @Counter= @Counter + 1
+END
+GO
+
+DECLARE @Counter INT = 1
+WHILE(@Counter <= 30)
+BEGIN
+	INSERT INTO Quest(quest_author, quest_text, quest_title)
+	VALUES (CONCAT('QuestAuthor', @Counter), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+	sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+	nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat', CONCAT('QuestTitle',@Counter))
+	SET @Counter = @Counter +1
+END
+GO
+
+INSERT INTO Campus(campus_location)
+VALUES ('Paris'), ('Strasbourg'), ('Lyon')
+GO
+
+
+
+DECLARE @Counter INT = 1
+DECLARE @CounterCursusId INT =1
+WHILE(@Counter <= 10)
+BEGIN
+	INSERT INTO Expedition (expedition_startdate, expedition_enddate, FK_cursus_id)
+	VALUES (CONCAT('0',@Counter, '-0',@Counter,'-2020'), CONCAT('0',@Counter +1, '-0',@Counter +1,'-2020'), @CounterCursusId)
+	SET @CounterCursusId= @CounterCursusId + 1
+	IF (@CounterCursusId =4)
+		BEGIN
+			SET @CounterCursusId = 1
+		END
+	SET @Counter = @Counter +1
 END
 GO
