@@ -147,22 +147,50 @@ END
 GO
 
 INSERT INTO Campus(campus_location)
-VALUES ('Paris'), ('Strasbourg'), ('Lyon')
+VALUES ('Paris'), ('Strasbourg'), ('Lyon'), ('Marseille')
 GO
 
+DROP PROCEDURE IF EXISTS sp_AssociatedEachCampusAndEachAgendaToEachCursus
+GO
 
+CREATE PROCEDURE sp_AssociatedEachCampusAndEachAgendaToEachCursus
+AS
+BEGIN 
+	DECLARE Campus_Cursor CURSOR SCROLL FOR
+		SELECT campus_id FROM Campus
+	DECLARE @CampusId INT
+	DECLARE Agenda_Cursor CURSOR SCROLL FOR
+		SELECT agenda_id FROM Agenda
+	DECLARE @AgendaId INT
+	OPEN Campus_Cursor
+	OPEN Agenda_Cursor
+	FETCH FIRST FROM Campus_Cursor INTO @CampusId
+	WHILE @@FETCH_STATUS =0
+		BEGIN
+			FETCH FIRST FROM Agenda_Cursor INTO @AgendaId
+			WHILE @@FETCH_STATUS = 0 
+				BEGIN
+					INSERT INTO Cursus(cursus_name, cursus_startdate, cursus_enddate, FK_campus_id, FK_agenda_id) 
+					VALUES ('Cursus','01-01-2020', '11-11-2020', @CampusId, @AgendaId)
+					FETCH NEXT FROM Agenda_Cursor INTO @AgendaId
+				END
+			FETCH NEXT FROM Campus_Cursor INTO @CampusId
+		END
+	CLOSE Campus_Cursor
+	CLOSE Agenda_Cursor
+	DEALLOCATE Campus_Cursor
+	DEALLOCATE Agenda_Cursor
+END
+GO
+
+EXECUTE sp_AssociatedEachCampusAndEachAgendaToEachCursus
+GO
 
 DECLARE @Counter INT = 1
-DECLARE @CounterCursusId INT =1
-WHILE(@Counter <= 10)
+WHILE(@Counter <= 16)
 BEGIN
 	INSERT INTO Expedition (expedition_startdate, expedition_enddate, FK_cursus_id)
-	VALUES (CONCAT('0',@Counter, '-0',@Counter,'-2020'), CONCAT('0',@Counter +1, '-0',@Counter +1,'-2020'), @CounterCursusId)
-	SET @CounterCursusId= @CounterCursusId + 1
-	IF (@CounterCursusId =4)
-		BEGIN
-			SET @CounterCursusId = 1
-		END
+	VALUES (CONCAT('0',@Counter, '-0',@Counter,'-2020'), CONCAT('0',@Counter +1, '-0',@Counter +1,'-2020'), @Counter)
 	SET @Counter = @Counter +1
 END
 GO
