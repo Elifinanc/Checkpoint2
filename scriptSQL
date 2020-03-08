@@ -93,8 +93,8 @@ CREATE TABLE Person(person_id INT PRIMARY KEY IDENTITY(1,1),
 					FOREIGN KEY (FK_agenda_id) REFERENCES Agenda(agenda_id),
 					FK_cursus_id INT ,
 					FOREIGN KEY (FK_cursus_id) REFERENCES Cursus(cursus_id),
-					FK_subordinates_id INT ,
-					FOREIGN KEY (FK_subordinates_id) REFERENCES Person(person_id)
+					FK_lead_id INT ,
+					FOREIGN KEY (FK_lead_id) REFERENCES Person(person_id)
 )
 GO
 
@@ -208,18 +208,32 @@ BEGIN
 END
 GO
 
+--insérer des données dans la table Person
 
+INSERT INTO Person(person_name, person_type, FK_agenda_id, FK_cursus_id, FK_lead_id)
+VALUES ('Lead1', 'LeadFormer', 1 , NULL, 1)
+GO
 
+DROP PROCEDURE IF EXISTS sp_AssociatedEachFormerToLeadFormer
+GO 
 
-DECLARE @StudentCounter INT = 1
-WHILE @StudentCounter < 101 
-BEGIN
-	INSERT INTO Person(person_name, person_type, FK_agenda_id, FK_cursus_id, FK_subordinates_id) 
-	VALUES (CONCAT('P', @StudentCounter), 'Student', FLOOR(RAND()*(4-3+1))+3 , FLOOR(RAND()*(10-1+1))+1, NULL)
-	SET @StudentCounter = @StudentCounter + 1
+CREATE PROCEDURE sp_AssociatedEachFormerToLeadFormer
+AS
+BEGIN 
+	DECLARE @FormerId INT = 1
+	WHILE (@FormerId <= 4)
+	BEGIN
+		INSERT INTO Person(person_name, person_type, FK_agenda_id, FK_cursus_id, FK_lead_id)
+		VALUES (CONCAT('Former', @FormerId), 'Former', 2 , NULL, 1)
+		SET @FormerId = @FormerId  + 1
+	END
 END
 GO
 
+EXECUTE sp_AssociatedEachFormerToLeadFormer
+GO
+
+SELECT * FROM Person
 
 DROP PROCEDURE IF EXISTS sp_AssociatedEachStudentToAFormer
 GO 
@@ -227,17 +241,20 @@ GO
 CREATE PROCEDURE sp_AssociatedEachStudentToAFormer
 AS
 BEGIN 
-	DECLARE @FormerId INT = 1
-	DECLARE @StudentIdCounter INT = 1
-	WHILE (@StudentIdCounter <=100 AND @FormerId <= 4)
+	DECLARE @StudentIdCounter INT = 1, @NbStudent INT = 1
+	WHILE (@StudentIdCounter <=120 AND @NbStudent>0)
 	BEGIN
-		INSERT INTO Person(person_name, person_type, FK_agenda_id, FK_cursus_id, FK_subordinates_id)
-		VALUES (CONCAT('Former', @FormerId), 'Former', 2 , NULL, @StudentIdCounter)
+		DECLARE @FormerId INT
+		SELECT @FormerId = person_id FROM Person WHERE person_name IN ('Former1', 'Former2', 'Former3', 'Former4') ORDER BY NEWID()
+		INSERT INTO Person(person_name, person_type, FK_agenda_id, FK_cursus_id, FK_lead_id)
+		VALUES (CONCAT('Student', @StudentIdCounter), 'Student', FLOOR(RAND()*(4-3+1))+3 , FLOOR(RAND()*(10-1+1))+1, @FormerId)
 		SET @StudentIdCounter= @StudentIdCounter + 1
-		IF (@StudentIdCounter % 26 = 0)
-			BEGIN
-				SET @FormerId = @FormerId + 1
-			END
+
+		SELECT COUNT(person_id)
+		FROM Person
+		GROUP BY FK_lead_id
+		HAVING COUNT(person_id)<25
+		SELECT @NbStudent = @@ROWCOUNT
 	END
 END
 GO
@@ -246,35 +263,28 @@ EXECUTE sp_AssociatedEachStudentToAFormer
 GO
 
 
-DROP PROCEDURE IF EXISTS sp_AssociatedEachFormersToLeadFormer
-GO 
+DROP PROCEDURE IF EXISTS sp_GetAllEventBeetweenTwoDatesForAPerson
+GO
 
-CREATE PROCEDURE sp_AssociatedEachFormersToLeadFormer
+CREATE PROCEDURE sp_GetAllEventBeetweenTwoDatesForAPerson (
+@start_date AS DATETIME,
+@end_date AS DATETIME,
+@person_name AS VARCHAR(50)
+)
 AS
-BEGIN
-	DECLARE Subordinates_Cursor CURSOR SCROLL FOR
-		SELECT person_id FROM Person WHERE person_name = 'Former1'
-	DECLARE @SubordinatesId INT
-	OPEN Subordinates_Cursor
-	DECLARE @personCounter INT =1
-	FETCH FIRST FROM Subordinates_Cursor INTO @SubordinatesId
-	WHILE COUNT(@personCounter) < 4 
-	BEGIN
-		INSERT INTO Person(person_name, person_type, FK_agenda_id, FK_cursus_id, FK_subordinates_id)
-		VALUES ('Lead1', 'LeadFormer', 1 , NULL, @SubordinatesId)
-		SET @personCounter = @personCounter + 1
-	END
-	FETCH NEXT FROM Subordinates_Cursor INTO @SubordinatesId
-	CLOSE Subordinates_Cursor
-	DEALLOCATE Suordinates_Cursor
+BEGIN 
+	SELECT p.person_id, p.person_name, e.event_id, e.event_name, e.event_date
+	FROM [Event] AS e
+	INNER JOIN EventAgenda AS ea ON ea.FK_event_id = e.event_id
+	INNER JOIN Agenda AS a ON a.agenda_id = ea.FK_agenda_id
+	INNER JOIN Person AS p ON p.FK_agenda_id = a.agenda_id
+	WHERE e.event_date >= @start_date AND e.event_date <= @end_date AND p.person_name = @person_name
+	ORDER BY p.person_id
 END
 GO
 
-EXECUTE sp_AssociatedEachFormersToLeadFormer
+EXECUTE sp_GetAllEventBeetweenTwoDatesForAPerson
+    @start_date ='03-03-2020', 
+    @end_date ='10-10-2020',
+    @person_name ='Student74';
 GO
-
-
-SELECT * FROM Person
-
-
-VALUES ('Lead1', 'LeadFormer', 1 , NULL, person_id FROM Person WHERE person_name IN ('Former1', 'Former2', 'Former3', 'Former4'))
